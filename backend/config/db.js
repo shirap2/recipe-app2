@@ -1,17 +1,24 @@
-// backend/config/db.js
 const mongoose = require('mongoose');
+require('dotenv').config(); // Load environment variables
 
 const connectDB = async () => {
   try {
-    await mongoose.connect('mongodb://localhost:27017/recipes', {
+    const mongoURI = process.env.MONGODB_URI;
+    
+    if (!mongoURI) {
+      console.error('MongoDB URI is not defined in .env file');
+      process.exit(1);
+    }
+
+    await mongoose.connect(mongoURI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
-    console.log('MongoDB connected');
-    // return conn;
-  } catch (err) {
-    console.error('MongoDB connection error:', err);
-    // process.exit(1);
+    
+    console.log('MongoDB connected successfully');
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    process.exit(1);
   }
 };
 
