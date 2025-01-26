@@ -8,6 +8,17 @@ const RecipeSchema=new mongoose.Schema({
         minLength: [3, 'Title must be at least 3 characters long']
 
     },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    source: {
+      type: String,
+      default: 'Custom'  // Could be 'Custom', 'URL', 'Image', etc.
+    },
+    sourceUrl: String,
+    sourceImage: String,
 
     ingredients:[{
         name:{
@@ -25,22 +36,16 @@ const RecipeSchema=new mongoose.Schema({
     }],
 
     instructions: [{
-        type: String,
-        required: [true, 'At least one instruction is required']
+        type: String
       }],
 
-      prepTime: {
-        type: Number,
-        min: [0, 'Preparation time cannot be negative']
-      },
-      cookTime: {
-        type: Number,
-        min: [0, 'Cooking time cannot be negative']
-      },
-      servings: {
-        type: Number,
-        min: [1, 'Must serve at least 1 person']
-      },
+      prepTime: Number,
+      cookTime: Number,
+       
+      servings: Number,
+      tags: [String],
+      notes: String,
+
       difficulty: {
         type: String,
         enum: ['Easy', 'Medium', 'Hard'],
@@ -56,6 +61,8 @@ const RecipeSchema=new mongoose.Schema({
       }
 });
 
+// Add text index for searching
+RecipeSchema.index({ title: 'text', tags: 'text' });
 
 // update the updatedAt field before saving
 RecipeSchema.pre('save',function(next){
