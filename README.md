@@ -32,19 +32,19 @@ A simple recipe app built with Node.js, Express, MongoDB, and React.
 
 2. Install dependencies:
 
-```sh
-cd recipe-app
-npm install
-   ```
+    ```sh
+    cd recipe-app
+    npm install
+    ```
 
 3. Set up environment variables: Create a .env file in the root directory with the following variables:
 
-```sh
-MONGO_URI=your_mongo_database_uri
-NODE_ENV=development
-```
+    ```sh
+    MONGO_URI=your_mongo_database_uri
+    NODE_ENV=development
+    ```
 
 4. Run the server:
-```sh
-npm start
-```
+    ```sh
+    npm start
+    ```
