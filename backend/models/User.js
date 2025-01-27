@@ -39,13 +39,13 @@ const UserSchema = new mongoose.Schema({
   timestamps: true  // Moved outside of the schema definition
 });
 
-// Hash password before saving
-UserSchema.pre('save', async function(next) {
-  if (this.isModified('password')) {
-    this.password = await bcrypt.hash(this.password, 8);
-  }
-  next();
-});
+// // Hash password before saving
+// UserSchema.pre('save', async function(next) {
+//   if (this.isModified('password')) {
+//     this.password = await bcrypt.hash(this.password, 8);
+//   }
+//   next();
+// });
 
 // Method to check password
 UserSchema.methods.comparePassword = async function(password) {
