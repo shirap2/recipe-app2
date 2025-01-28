@@ -25,9 +25,8 @@ A simple recipe app built with Node.js, Express, MongoDB, and React.
 
 1. Clone the repository:
    ```
-
    git clone https://github.com/shirap2/recipe-app.git
-      ```
+   ```
 
 
 2. Install dependencies:
@@ -41,7 +40,8 @@ A simple recipe app built with Node.js, Express, MongoDB, and React.
 
     ```sh
     MONGO_URI=your_mongo_database_uri
-    NODE_ENV=development
+    ACCESS_TOKEN_SECRET=
+    REFRESH_TOKEN_SECRET=
     ```
 
 4. Run the server:

@@ -24,32 +24,12 @@ const UserSchema = new mongoose.Schema({
     ref: 'Role',
     default: null
   },
-  refreshTokens: [{
-    token: {
-      type: String,
-      required: true
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-      expires: '7d'  // Automatically remove after 7 days
-    }
-  }]
+  refreshToken: {
+    type: String,
+    default: null,},
 }, {
   timestamps: true  // Moved outside of the schema definition
 });
 
-// // Hash password before saving
-// UserSchema.pre('save', async function(next) {
-//   if (this.isModified('password')) {
-//     this.password = await bcrypt.hash(this.password, 8);
-//   }
-//   next();
-// });
-
-// Method to check password
-UserSchema.methods.comparePassword = async function(password) {
-  return bcrypt.compare(password, this.password);
-};
 
 module.exports = mongoose.model('User', UserSchema);

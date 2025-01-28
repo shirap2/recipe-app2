@@ -7,6 +7,9 @@ const authMiddleware = require('../middleware/auth');
 // Apply auth middleware to all routes
 router.use(authMiddleware);
 
+// Search recipes
+router.get('/search', recipeController.searchRecipes);
+
 // Get all recipes
 router.get('/', recipeController.getAllRecipes);
 
@@ -22,7 +25,6 @@ router.patch('/:id', recipeController.updateRecipe);
 // Delete recipe
 router.delete('/:id', recipeController.deleteRecipe);
 
-// Search recipes
-router.get('/search', recipeController.searchRecipes);
+
 
 module.exports = router;
