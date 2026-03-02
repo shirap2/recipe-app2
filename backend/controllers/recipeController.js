@@ -4,7 +4,7 @@ const Recipe = require('../models/Recipe');
 // Get all recipes for a user
 exports.getAllRecipes = async (req, res) => {
   try {
-    const recipes = await Recipe.find({ user: req.user.id });
+    const recipes = await Recipe.find({ user: req.user.userId });
     res.json(recipes);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -16,7 +16,7 @@ exports.getRecipeById = async (req, res) => {
   try {
     const recipe = await Recipe.findOne({ 
       _id: req.params.id, 
-      user: req.user.id 
+      user: req.user.userId 
     });
     
     if (!recipe) {
@@ -34,7 +34,7 @@ exports.createRecipe = async (req, res) => {
   try {
     const recipe = new Recipe({
       ...req.body,
-      user: req.user.id
+      user: req.user.userId
     });
 
     const newRecipe = await recipe.save();
@@ -48,7 +48,7 @@ exports.createRecipe = async (req, res) => {
 exports.updateRecipe = async (req, res) => {
   try {
     const recipe = await Recipe.findOneAndUpdate(
-      { _id: req.params.id, user: req.user.id },
+      { _id: req.params.id, user: req.user.userId },
       req.body,
       { new: true, runValidators: true }
     );
@@ -68,7 +68,7 @@ exports.deleteRecipe = async (req, res) => {
   try {
     const recipe = await Recipe.findOneAndDelete({ 
       _id: req.params.id, 
-      user: req.user.id 
+      user: req.user.userId 
     });
 
     if (!recipe) {
@@ -86,7 +86,7 @@ exports.searchRecipes = async (req, res) => {
   try {
     const { query } = req.query;
     const recipes = await Recipe.find({
-      user: req.user.id,
+      user: req.user.userId,
       $or: [
         { title: { $regex: query, $options: 'i' } },
         { tags: { $regex: query, $options: 'i' } }
