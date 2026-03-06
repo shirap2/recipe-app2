@@ -2,10 +2,6 @@
 const express = require('express');
 const router = express.Router();
 const recipeController = require('../controllers/recipeController');
-const authMiddleware = require('../middleware/auth');
-
-// Apply auth middleware to all routes
-router.use(authMiddleware);
 
 // Search recipes
 router.get('/search', recipeController.searchRecipes);

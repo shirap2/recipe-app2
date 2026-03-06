@@ -67,7 +67,7 @@ RecipeSchema.index({ title: 'text', tags: 'text' });
 
 // update the updatedAt field before saving
 RecipeSchema.pre('save',function(next){
-    this.updateAt=new Date();
+    this.updatedAt=new Date();
     next();
 });
 

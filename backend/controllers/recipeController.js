@@ -85,11 +85,20 @@ exports.deleteRecipe = async (req, res) => {
 exports.searchRecipes = async (req, res) => {
   try {
     const { query } = req.query;
+
+    if (!query || query.trim() === '') {
+      return res.json([]);
+    }
+
+    // Escape special regex characters to prevent ReDoS
+    const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escaped, 'i');
+
     const recipes = await Recipe.find({
       user: req.user.userId,
       $or: [
-        { title: { $regex: query, $options: 'i' } },
-        { tags: { $regex: query, $options: 'i' } }
+        { title: regex },
+        { tags: regex }
       ]
     });
 
