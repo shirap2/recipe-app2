@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+/* ── Earth Tones Theme ── */
+@theme {
+  /* Sage greens */
+  --color-sage-50:  #f3f6ef;
+  --color-sage-100: #e4ecdd;
+  --color-sage-200: #c6d9ba;
+  --color-sage-300: #9ebf90;
+  --color-sage-400: #72a164;
+  --color-sage-500: #517d44;
+  --color-sage-600: #3e6134;
+  --color-sage-700: #2f4d28;
+  --color-sage-800: #22381d;
+  --color-sage-900: #162513;
+
+  /* Warm cream / off-whites */
+  --color-cream-50:  #fdfaf3;
+  --color-cream-100: #f9f3e4;
+  --color-cream-200: #f1e5cc;
+  --color-cream-300: #e5d1a8;
+  --color-cream-400: #d4b87a;
+
+  /* Terracotta */
+  --color-terracotta-50:  #fdf3ee;
+  --color-terracotta-100: #fae3d5;
+  --color-terracotta-200: #f4c3a4;
+  --color-terracotta-300: #eb9a6a;
+  --color-terracotta-400: #de6e3a;
+  --color-terracotta-500: #c45528;
+  --color-terracotta-600: #a0411e;
+  --color-terracotta-700: #7e3117;
+  --color-terracotta-800: #5c2211;
+  --color-terracotta-900: #3c150a;
+
+  /* Typography */
+  --font-sans: 'Montserrat', sans-serif;
+
+  /* Border radius — user spec: buttons at exactly 4px */
+  --radius-sm: 0.125rem;  /* 2px  */
+  --radius:    0.25rem;   /* 4px  — used for buttons, inputs, tags */
+  --radius-md: 0.375rem;  /* 6px  */
+  --radius-lg: 0.5rem;    /* 8px  — used for cards, panels */
+  --radius-xl: 0.75rem;   /* 12px */
+}
+
+/* ── Global base ── */
+@layer base {
+  body {
+    @apply bg-cream-50 text-sage-900 font-sans antialiased;
+  }
+  h1, h2, h3 {
+    @apply font-bold tracking-tight;
+  }
+}
+
+/* ── Reusable component classes ── */
+@layer components {
+
+  /* Buttons — all share 4px radius + soft shadow */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 font-semibold text-sm px-5 py-2 rounded shadow-sm transition-colors duration-150 cursor-pointer border-0 disabled:opacity-60 disabled:cursor-not-allowed bg-terracotta-500 hover:bg-terracotta-600 text-white;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 font-semibold text-sm px-5 py-2 rounded shadow-sm transition-colors duration-150 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed bg-cream-100 hover:bg-cream-200 text-sage-700 border border-cream-300;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 font-semibold text-sm px-5 py-2 rounded shadow-sm transition-colors duration-150 cursor-pointer border-0 disabled:opacity-60 disabled:cursor-not-allowed bg-terracotta-100 hover:bg-terracotta-200 text-terracotta-700;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 font-semibold text-sm px-5 py-2 rounded shadow-sm transition-colors duration-150 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed bg-transparent hover:bg-sage-50 text-sage-600 border border-sage-300;
+  }
+
+  /* Form inputs */
+  .input {
+    @apply w-full border border-cream-300 rounded bg-white px-3 py-2 text-sm text-sage-900 placeholder-sage-300 focus:outline-none focus:ring-2 focus:ring-sage-300 focus:border-sage-400 transition;
+  }
+
+  /* Cards */
+  .card {
+    @apply bg-white border border-cream-200 rounded-lg shadow-sm;
+  }
+
+  /* Section label above inputs */
+  .field-label {
+    @apply block text-sm font-semibold text-sage-700 mb-1;
+  }
+
+  /* Page wrapper */
+  .page {
+    @apply max-w-5xl mx-auto px-6 py-8;
+  }
+
+  /* Filter pills — category filter in RecipesPage */
+  .filter-pill {
+    @apply inline-flex items-center justify-center font-medium text-sm px-4 py-1.5 rounded-full cursor-pointer transition-colors duration-150 bg-cream-100 hover:bg-cream-200 text-sage-600 border border-cream-300;
+  }
+
+  .filter-pill-active {
+    @apply inline-flex items-center justify-center font-medium text-sm px-4 py-1.5 rounded-full cursor-pointer transition-colors duration-150 bg-sage-600 text-cream-50 border border-sage-600;
+  }
+}

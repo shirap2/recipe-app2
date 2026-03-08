@@ -20,20 +20,16 @@ export default function EditRecipePage() {
     navigate(`/recipes/${id}`);
   };
 
-  if (error) return <div style={styles.page}><p style={{ color: '#dc2626' }}>{error}</p></div>;
-  if (!initialData) return <div style={styles.page}><p>Loading...</p></div>;
+  if (error)        return <div className="page"><p className="text-terracotta-600">{error}</p></div>;
+  if (!initialData) return <div className="page"><p className="text-sage-500">Loading…</p></div>;
 
   return (
-    <div style={styles.page}>
-      <Link to={`/recipes/${id}`} style={styles.back}>← Back to Recipe</Link>
-      <h2 style={styles.heading}>Edit Recipe</h2>
+    <div className="page max-w-3xl">
+      <Link to={`/recipes/${id}`} className="text-terracotta-500 hover:text-terracotta-600 text-sm font-medium no-underline transition-colors">
+        ← Back to Recipe
+      </Link>
+      <h2 className="text-sage-900 text-2xl font-bold mt-3 mb-6">Edit Recipe</h2>
       <RecipeForm initialData={initialData} onSubmit={handleSubmit} submitLabel="Update Recipe" />
     </div>
   );
 }
-
-const styles = {
-  page: { maxWidth: 760, margin: '0 auto', padding: '32px 24px', fontFamily: 'sans-serif' },
-  back: { color: '#2563eb', textDecoration: 'none', fontSize: 14 },
-  heading: { margin: '12px 0 24px', fontSize: 24, color: '#0f172a' },
-};

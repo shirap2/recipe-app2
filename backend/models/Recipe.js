@@ -51,6 +51,11 @@ const RecipeSchema=new mongoose.Schema({
         enum: ['Easy', 'Medium', 'Hard'],
         default: 'Medium'
       },
+      category: {
+        type: String,
+        enum: ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Dessert', 'Drink', 'Other'],
+        default: 'Other'
+      },
       createdAt: {
         type: Date,
         default: Date.now,

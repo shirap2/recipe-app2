@@ -1,4 +1,5 @@
 import { createContext, useState, useEffect, useRef } from 'react';
+
 import axiosInstance from '../api/axios';
 import { login as apiLogin, register as apiRegister, refresh, logout as apiLogout } from '../api/authApi';
 
@@ -21,9 +22,7 @@ export function AuthProvider({ children }) {
     refresh()
       .then((data) => {
         setToken(data.accessToken);
-        // Decode userId from JWT payload (we don't have username here)
-        const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
-        setUser({ id: payload.userId });
+        setUser(data.user);
       })
       .catch(() => {
         // No valid session — user stays null, redirect to login

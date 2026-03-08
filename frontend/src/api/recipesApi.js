@@ -1,7 +1,8 @@
 import axiosInstance from './axios';
 
-export const getAllRecipes = async () => {
-  const res = await axiosInstance.get('/recipes');
+export const getAllRecipes = async (category = null) => {
+  const params = category ? { category } : {};
+  const res = await axiosInstance.get('/recipes', { params });
   return res.data;
 };
 

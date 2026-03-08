@@ -11,30 +11,37 @@ export default function NavBar() {
   };
 
   return (
-    <nav style={styles.nav}>
-      <Link to="/recipes" style={styles.logo}>🍳 Recipe App</Link>
-      <div style={styles.right}>
-        <Link to="/recipes" style={styles.link}>My Recipes</Link>
-        <Link to="/recipes/new" style={styles.link}>+ New Recipe</Link>
-        <span style={styles.username}>{user?.username || 'Account'}</span>
-        <button onClick={handleLogout} style={styles.logoutBtn}>Logout</button>
+    <nav className="bg-sage-800 px-6 py-3 flex items-center justify-between sticky top-0 z-50 shadow-md">
+      <Link
+        to="/recipes"
+        className="text-cream-100 font-bold text-lg tracking-wide no-underline hover:text-white transition-colors"
+      >
+        🍳 Recipe App
+      </Link>
+
+      <div className="flex items-center gap-6">
+        <Link
+          to="/recipes"
+          className="text-cream-300 hover:text-cream-100 text-sm font-medium transition-colors no-underline"
+        >
+          My Recipes
+        </Link>
+        <Link
+          to="/recipes/new"
+          className="bg-terracotta-500 hover:bg-terracotta-600 text-white text-sm font-semibold px-4 py-1.5 rounded shadow-sm transition-colors no-underline"
+        >
+          + New Recipe
+        </Link>
+        <span className="text-cream-400 text-sm font-medium">
+          {user?.username || 'Account'}
+        </span>
+        <button
+          onClick={handleLogout}
+          className="border border-sage-600 text-cream-300 hover:bg-sage-700 hover:text-cream-100 px-3 py-1.5 rounded text-sm font-medium transition-colors shadow-sm cursor-pointer"
+        >
+          Logout
+        </button>
       </div>
     </nav>
   );
 }
-
-const styles = {
-  nav: {
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '12px 24px', background: '#1e293b', color: '#fff',
-    fontFamily: 'sans-serif', position: 'sticky', top: 0, zIndex: 100,
-  },
-  logo: { color: '#fff', textDecoration: 'none', fontWeight: 700, fontSize: 18 },
-  right: { display: 'flex', alignItems: 'center', gap: 20 },
-  link: { color: '#94a3b8', textDecoration: 'none', fontSize: 14 },
-  username: { color: '#e2e8f0', fontSize: 14 },
-  logoutBtn: {
-    background: 'transparent', border: '1px solid #475569', color: '#94a3b8',
-    padding: '4px 12px', borderRadius: 4, cursor: 'pointer', fontSize: 13,
-  },
-};

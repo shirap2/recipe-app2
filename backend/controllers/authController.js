@@ -114,7 +114,10 @@ const refresh = async (req, res) => {
       if (foundUser._id.toString() !== decoded.userId) return res.sendStatus(403);
 
       const accessToken = generateAccessToken(foundUser._id);
-      res.json({ accessToken });
+      res.json({
+        accessToken,
+        user: { id: foundUser._id, username: foundUser.username, email: foundUser.email },
+      });
     });
   } catch (error) {
     console.error('Refresh Token Error:', error.message);

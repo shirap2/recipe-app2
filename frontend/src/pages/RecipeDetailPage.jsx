@@ -1,15 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getRecipeById, deleteRecipe } from '../api/recipesApi';
+import ConfirmDialog from '../components/ConfirmDialog';
 
-const DIFFICULTY_COLOR = { Easy: '#16a34a', Medium: '#d97706', Hard: '#dc2626' };
+const DIFFICULTY_STYLES = {
+  Easy:   'bg-sage-100 text-sage-700',
+  Medium: 'bg-cream-200 text-terracotta-600',
+  Hard:   'bg-terracotta-100 text-terracotta-700',
+};
 
 export default function RecipeDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [recipe, setRecipe] = useState(null);
+  const [recipe, setRecipe]   = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError]     = useState('');
 
   useEffect(() => {
     getRecipeById(id)
@@ -19,7 +24,6 @@ export default function RecipeDetailPage() {
   }, [id]);
 
   const handleDelete = async () => {
-    if (!window.confirm(`Delete "${recipe.title}"? This cannot be undone.`)) return;
     try {
       await deleteRecipe(id);
       navigate('/recipes');
@@ -28,110 +32,114 @@ export default function RecipeDetailPage() {
     }
   };
 
-  if (loading) return <div style={styles.page}><p>Loading...</p></div>;
-  if (error) return <div style={styles.page}><p style={styles.error}>{error}</p><Link to="/recipes">← Back</Link></div>;
+  if (loading) return <div className="page"><p className="text-sage-500">Loading…</p></div>;
+  if (error)   return (
+    <div className="page">
+      <p className="text-terracotta-600 mb-4">{error}</p>
+      <Link to="/recipes" className="text-terracotta-500 hover:underline text-sm">← My Recipes</Link>
+    </div>
+  );
+
+  const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
 
   return (
-    <div style={styles.page}>
-      {/* Header */}
-      <div style={styles.header}>
-        <Link to="/recipes" style={styles.back}>← My Recipes</Link>
-        <div style={styles.actions}>
-          <Link to={`/recipes/${id}/edit`} style={styles.editBtn}>Edit</Link>
-          <button onClick={handleDelete} style={styles.deleteBtn}>Delete</button>
+    <div className="page max-w-3xl">
+
+      {/* Top bar */}
+      <div className="flex items-center justify-between mb-6">
+        <Link to="/recipes" className="text-terracotta-500 hover:text-terracotta-600 text-sm font-medium no-underline transition-colors">
+          ← My Recipes
+        </Link>
+        <div className="flex gap-2">
+          <Link to={`/recipes/${id}/edit`} className="btn-secondary no-underline">Edit</Link>
+          <ConfirmDialog
+            triggerLabel="Delete"
+            message={`Delete "${recipe.title}"? This cannot be undone.`}
+            onConfirm={handleDelete}
+          />
         </div>
       </div>
 
-      <h1 style={styles.title}>{recipe.title}</h1>
+      {/* Title */}
+      <h1 className="text-sage-900 text-3xl font-bold mb-4">{recipe.title}</h1>
 
-      {/* Meta row */}
-      <div style={styles.metaRow}>
+      {/* Meta pills */}
+      <div className="flex flex-wrap items-center gap-3 mb-4">
         {recipe.difficulty && (
-          <span style={{ ...styles.badge, color: DIFFICULTY_COLOR[recipe.difficulty] || '#64748b' }}>
+          <span className={`text-xs font-bold px-3 py-1 rounded ${DIFFICULTY_STYLES[recipe.difficulty] || 'bg-cream-100 text-sage-600'}`}>
             {recipe.difficulty}
           </span>
         )}
-        {recipe.prepTime && <span style={styles.meta}>Prep: {recipe.prepTime}m</span>}
-        {recipe.cookTime && <span style={styles.meta}>Cook: {recipe.cookTime}m</span>}
-        {(recipe.prepTime || recipe.cookTime) && (
-          <span style={styles.meta}>Total: {(recipe.prepTime || 0) + (recipe.cookTime || 0)}m</span>
-        )}
-        {recipe.servings && <span style={styles.meta}>{recipe.servings} servings</span>}
+        {recipe.prepTime  && <span className="text-sage-500 text-sm">Prep {recipe.prepTime}m</span>}
+        {recipe.cookTime  && <span className="text-sage-500 text-sm">Cook {recipe.cookTime}m</span>}
+        {totalTime > 0    && <span className="text-sage-500 text-sm font-semibold">{totalTime}m total</span>}
+        {recipe.servings  && <span className="text-sage-500 text-sm">{recipe.servings} servings</span>}
       </div>
 
       {/* Tags */}
       {recipe.tags?.length > 0 && (
-        <div style={styles.tags}>
-          {recipe.tags.map(t => <span key={t} style={styles.tag}>{t}</span>)}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {recipe.tags.map(t => (
+            <span key={t} className="bg-cream-100 text-sage-600 text-xs px-3 py-1 rounded">
+              {t}
+            </span>
+          ))}
         </div>
       )}
 
-      <div style={styles.body}>
+      {/* Body: ingredients + instructions */}
+      <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-8 mt-2">
+
         {/* Ingredients */}
-        <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>Ingredients</h2>
+        <div className="card p-5">
+          <h2 className="text-sage-800 text-base font-bold mb-4 pb-2 border-b border-cream-200">
+            Ingredients
+          </h2>
           {recipe.ingredients?.length > 0 ? (
-            <ul style={styles.ingredientList}>
+            <ul className="list-none p-0 m-0 flex flex-col gap-3">
               {recipe.ingredients.map((ing, i) => (
-                <li key={i} style={styles.ingredientItem}>
-                  <span style={styles.amount}>{ing.amount} {ing.unit}</span>
-                  <span>{ing.name}</span>
+                <li key={i} className="flex items-baseline gap-2 text-sm">
+                  <span className="font-semibold text-sage-900 min-w-[72px]">
+                    {ing.amount} {ing.unit}
+                  </span>
+                  <span className="text-sage-600">{ing.name}</span>
                 </li>
               ))}
             </ul>
           ) : (
-            <p style={styles.empty}>No ingredients listed.</p>
+            <p className="text-sage-400 text-sm">No ingredients listed.</p>
           )}
-        </section>
+        </div>
 
         {/* Instructions */}
-        <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>Instructions</h2>
+        <div>
+          <h2 className="text-sage-800 text-base font-bold mb-4 pb-2 border-b border-cream-200">
+            Instructions
+          </h2>
           {recipe.instructions?.length > 0 ? (
-            <ol style={styles.instructionList}>
+            <ol className="list-none p-0 m-0 flex flex-col gap-4">
               {recipe.instructions.map((step, i) => (
-                <li key={i} style={styles.instructionItem}>{step}</li>
+                <li key={i} className="flex gap-4">
+                  <span className="bg-terracotta-500 text-white text-xs font-bold w-6 h-6 rounded flex items-center justify-center shrink-0 mt-0.5">
+                    {i + 1}
+                  </span>
+                  <p className="text-sage-700 text-sm leading-relaxed m-0">{step}</p>
+                </li>
               ))}
             </ol>
           ) : (
-            <p style={styles.empty}>No instructions listed.</p>
+            <p className="text-sage-400 text-sm">No instructions listed.</p>
           )}
-        </section>
+        </div>
       </div>
 
       {/* Notes */}
       {recipe.notes && (
-        <section style={{ ...styles.section, marginTop: 16 }}>
-          <h2 style={styles.sectionTitle}>Notes</h2>
-          <p style={styles.notes}>{recipe.notes}</p>
-        </section>
+        <div className="mt-8 bg-cream-100 border border-cream-200 rounded-lg px-5 py-4">
+          <h2 className="text-sage-700 text-sm font-bold mb-2">Notes</h2>
+          <p className="text-sage-600 text-sm leading-relaxed m-0">{recipe.notes}</p>
+        </div>
       )}
     </div>
   );
 }
-
-const styles = {
-  page: { maxWidth: 800, margin: '0 auto', padding: '32px 24px', fontFamily: 'sans-serif' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-  back: { color: '#2563eb', textDecoration: 'none', fontSize: 14 },
-  actions: { display: 'flex', gap: 10 },
-  editBtn: { padding: '6px 16px', background: '#f1f5f9', color: '#0f172a', borderRadius: 6, textDecoration: 'none', fontSize: 14, fontWeight: 500 },
-  deleteBtn: { padding: '6px 16px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 500 },
-  title: { margin: '0 0 16px', fontSize: 30, color: '#0f172a' },
-  metaRow: { display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center', marginBottom: 12 },
-  badge: { fontWeight: 700, fontSize: 14 },
-  meta: { fontSize: 14, color: '#64748b' },
-  tags: { display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 24 },
-  tag: { background: '#f1f5f9', color: '#475569', fontSize: 12, padding: '3px 10px', borderRadius: 12 },
-  body: { display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 32, marginTop: 24 },
-  section: {},
-  sectionTitle: { fontSize: 18, fontWeight: 700, color: '#0f172a', marginBottom: 12, borderBottom: '2px solid #f1f5f9', paddingBottom: 6 },
-  ingredientList: { listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 },
-  ingredientItem: { display: 'flex', gap: 8, fontSize: 14, color: '#374151' },
-  amount: { fontWeight: 600, minWidth: 80, color: '#0f172a' },
-  instructionList: { paddingLeft: 20, margin: 0, display: 'flex', flexDirection: 'column', gap: 12 },
-  instructionItem: { fontSize: 15, color: '#374151', lineHeight: 1.6 },
-  notes: { fontSize: 14, color: '#64748b', background: '#f8fafc', padding: '12px 16px', borderRadius: 8, lineHeight: 1.6 },
-  empty: { color: '#9ca3af', fontSize: 14 },
-  error: { color: '#dc2626' },
-};

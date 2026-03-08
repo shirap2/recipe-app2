@@ -4,10 +4,14 @@ const Recipe = require('../models/Recipe');
 // Get all recipes for a user
 exports.getAllRecipes = async (req, res) => {
   try {
-    const recipes = await Recipe.find({ user: req.user.userId });
+    const query = { user: req.user.userId };
+    if (req.query.category) {
+      query.category = req.query.category;
+    }
+    const recipes = await Recipe.find(query);
     res.json(recipes);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 };
 

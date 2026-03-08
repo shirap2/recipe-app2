@@ -22,11 +22,14 @@ connectDB();
 // Import routes
 const recipesRouter = require('./routes/recipes');
 const authRoutes = require('./routes/auth');
+const usersRouter = require('./routes/users');
+
 app.use('/api/auth', authRoutes);
 
 const authenticate = require('./middleware/auth');
 
 app.use('/api/recipes', authenticate, recipesRouter);
+app.use('/api/users', authenticate, usersRouter);
 
 
 
@@ -36,7 +39,8 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Internal Server Error' });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+}
+
+module.exports = app;

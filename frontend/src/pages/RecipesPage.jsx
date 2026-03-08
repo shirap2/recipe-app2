@@ -1,100 +1,133 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+
 import { getAllRecipes, searchRecipes } from '../api/recipesApi';
+
+import CategoryFilter from '../components/CategoryFilter';
 import RecipeCard from '../components/RecipeCard';
+import SearchBar from '../components/SearchBar';
+import SortControls from '../components/SortControls';
 
 export default function RecipesPage() {
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [search, setSearch] = useState('');
-  const [searching, setSearching] = useState(false);
+  const [error, setError]     = useState('');
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const q        = searchParams.get('q')        ?? '';
+  const sort     = searchParams.get('sort')     ?? 'createdAt';
+  const order    = searchParams.get('order')    ?? 'desc';
+  const category = searchParams.get('category');
 
   useEffect(() => {
-    getAllRecipes()
-      .then(setRecipes)
-      .catch(() => setError('Failed to load recipes.'))
-      .finally(() => setLoading(false));
-  }, []);
+    let cancelled = false;
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!search.trim()) {
-      setSearching(false);
+    const fetch = async () => {
       setLoading(true);
-      const data = await getAllRecipes();
-      setRecipes(data);
-      setLoading(false);
-      return;
-    }
-    setSearching(true);
-    setLoading(true);
-    try {
-      const data = await searchRecipes(search.trim());
-      setRecipes(data);
-    } catch {
-      setError('Search failed.');
-    } finally {
-      setLoading(false);
-    }
-  };
+      setError('');
+      try {
+        const data = q ? await searchRecipes(q) : await getAllRecipes(category || null);
+        if (!cancelled) setRecipes(data);
+      } catch {
+        if (!cancelled) setError('Failed to load recipes.');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
 
-  const handleClear = async () => {
-    setSearch('');
-    setSearching(false);
-    setLoading(true);
-    const data = await getAllRecipes();
-    setRecipes(data);
-    setLoading(false);
-  };
+    fetch();
+    return () => { cancelled = true; };
+  }, [q, category]);
+
+  const handleSearch = (query) =>
+    setSearchParams((prev) => {
+      const p = new URLSearchParams(prev);
+      p.set('q', query);
+      return p;
+    });
+
+  const handleClear = () =>
+    setSearchParams((prev) => {
+      const p = new URLSearchParams(prev);
+      p.delete('q');
+      return p;
+    });
+
+  const handleSortChange = (newSort, newOrder) =>
+    setSearchParams((prev) => {
+      const p = new URLSearchParams(prev);
+      p.set('sort', newSort);
+      p.set('order', newOrder);
+      return p;
+    });
+
+  const handleCategoryChange = (cat) =>
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev);
+      if (cat) { p.set('category', cat); } else { p.delete('category'); }
+      return p;
+    });
+
+  const sorted = [...recipes].sort((a, b) => {
+    const aVal = a[sort] ?? '';
+    const bVal = b[sort] ?? '';
+    if (typeof aVal === 'string') {
+      return order === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+    }
+    return order === 'asc' ? aVal - bVal : bVal - aVal;
+  });
 
   return (
-    <div style={styles.page}>
-      <div style={styles.header}>
-        <h2 style={styles.heading}>My Recipes</h2>
-        <Link to="/recipes/new" style={styles.newBtn}>+ New Recipe</Link>
+    <div className="page">
+
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-sage-900 text-2xl m-0">My Recipes</h2>
+        <Link to="/recipes/new" className="btn-primary no-underline">
+          + New Recipe
+        </Link>
       </div>
 
-      {/* Search */}
-      <form onSubmit={handleSearch} style={styles.searchRow}>
-        <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Search by title or tag..."
-          style={styles.searchInput}
+      <div className="flex flex-wrap gap-2 mb-8">
+        <SearchBar
+          onSearch={handleSearch}
+          onClear={handleClear}
+          initialValue={q}
+          isSearching={!!q}
         />
-        <button type="submit" style={styles.searchBtn}>Search</button>
-        {searching && <button type="button" onClick={handleClear} style={styles.clearBtn}>Clear</button>}
-      </form>
+        <SortControls
+          sort={sort}
+          order={order}
+          onChange={handleSortChange}
+        />
+      </div>
 
-      {loading && <p style={styles.status}>Loading...</p>}
-      {error && <p style={styles.error}>{error}</p>}
+      <CategoryFilter value={category} onChange={handleCategoryChange} />
 
-      {!loading && !error && recipes.length === 0 && (
-        <div style={styles.empty}>
-          <p>{searching ? 'No recipes match your search.' : 'No recipes yet.'}</p>
-          {!searching && <Link to="/recipes/new" style={styles.newBtn}>Create your first recipe</Link>}
+      {loading && <p className="text-sage-500">Loading…</p>}
+      {error   && <p className="text-terracotta-600">{error}</p>}
+
+      {!loading && !error && sorted.length === 0 && (
+        <div className="text-center py-20">
+          <p className="text-sage-500 text-base mb-4">
+            {!!q
+              ? 'No recipes match your search.'
+              : category
+              ? 'No recipes in this category.'
+              : 'You haven\'t added any recipes yet.'}
+          </p>
+          {!q && !category && (
+            <Link to="/recipes/new" className="btn-primary no-underline">
+              Create your first recipe
+            </Link>
+          )}
         </div>
       )}
 
-      <div style={styles.grid}>
-        {recipes.map(r => <RecipeCard key={r._id} recipe={r} />)}
-      </div>
+      {!loading && sorted.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {sorted.map((r) => <RecipeCard key={r._id} recipe={r} />)}
+        </div>
+      )}
     </div>
   );
 }
-
-const styles = {
-  page: { maxWidth: 960, margin: '0 auto', padding: '32px 24px', fontFamily: 'sans-serif' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-  heading: { margin: 0, fontSize: 24, color: '#0f172a' },
-  newBtn: { background: '#2563eb', color: '#fff', padding: '8px 18px', borderRadius: 6, textDecoration: 'none', fontSize: 14, fontWeight: 600 },
-  searchRow: { display: 'flex', gap: 8, marginBottom: 24 },
-  searchInput: { flex: 1, padding: '9px 12px', fontSize: 14, border: '1px solid #d1d5db', borderRadius: 6 },
-  searchBtn: { padding: '9px 18px', background: '#0f172a', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14 },
-  clearBtn: { padding: '9px 14px', background: 'none', border: '1px solid #d1d5db', borderRadius: 6, cursor: 'pointer', fontSize: 14, color: '#6b7280' },
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 },
-  status: { color: '#64748b' },
-  error: { color: '#dc2626' },
-  empty: { textAlign: 'center', padding: '48px 0', color: '#64748b' },
-};
