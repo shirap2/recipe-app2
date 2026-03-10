@@ -2,6 +2,8 @@
 
 A full-stack recipe management application with user authentication.
 
+![Recipe App UI](image.png)
+
 ## Stack
 
 - **Backend**: Node.js / Express / MongoDB (Mongoose)
@@ -76,30 +78,6 @@ npm run dev
 ```
 
 The frontend runs on `http://localhost:3000` and the backend on `http://localhost:5000`.
-
-## API Overview
-
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| POST | `/api/auth/register` | No | Register a new user |
-| POST | `/api/auth/login` | No | Login, receive access token |
-| GET | `/api/auth/refresh` | Cookie | Refresh access token |
-| POST | `/api/auth/logout` | Yes | Logout and clear cookie |
-| GET | `/api/recipes` | Yes | List recipes (`?category=`, `?sort=`, `?order=asc\|desc`) |
-| GET | `/api/recipes/search` | Yes | Search by keyword |
-| GET | `/api/recipes/:id` | Yes | Get single recipe |
-| POST | `/api/recipes` | Yes | Create recipe |
-| PATCH | `/api/recipes/:id` | Yes | Update recipe |
-| DELETE | `/api/recipes/:id` | Yes | Delete recipe |
-
-## Security
-
-- Passwords hashed with bcrypt
-- HTTP security headers via Helmet
-- MongoDB injection prevention via express-mongo-sanitize
-- Rate limiting on auth endpoints (10 requests / 15 min)
-- Input validation via Zod schemas on all write endpoints
-- Refresh tokens stored in httpOnly cookies
 
 ## Testing
 
