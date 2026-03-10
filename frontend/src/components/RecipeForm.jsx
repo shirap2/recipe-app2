@@ -4,7 +4,7 @@ const EMPTY_INGREDIENT = { name: '', amount: '', unit: '' };
 
 const CATEGORIES = ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Dessert', 'Drink', 'Other'];
 
-function toFormState(data) {
+export function toFormState(data) {
   return {
     title: data?.title || '',
     category:   data?.category   || 'Other',
@@ -21,7 +21,7 @@ function toFormState(data) {
   };
 }
 
-function toPayload(form) {
+export function toPayload(form) {
   return {
     title: form.title.trim(),
     ingredients: form.ingredients
@@ -75,8 +75,9 @@ export default function RecipeForm({ initialData, onSubmit, submitLabel = 'Save 
 
       {/* Title */}
       <div>
-        <label className="field-label">Title *</label>
+        <label htmlFor="title" className="field-label">Title *</label>
         <input
+          id="title"
           className="input"
           value={form.title}
           onChange={e => set('title', e.target.value)}
@@ -87,16 +88,16 @@ export default function RecipeForm({ initialData, onSubmit, submitLabel = 'Save 
 
       {/* Category */}
       <div>
-        <label className="field-label">Category</label>
-        <select className="input" value={form.category} onChange={e => set('category', e.target.value)}>
+        <label htmlFor="category" className="field-label">Category</label>
+        <select id="category" className="input" value={form.category} onChange={e => set('category', e.target.value)}>
           {CATEGORIES.map(c => <option key={c}>{c}</option>)}
         </select>
       </div>
 
       {/* Difficulty */}
       <div>
-        <label className="field-label">Difficulty</label>
-        <select className="input" value={form.difficulty} onChange={e => set('difficulty', e.target.value)}>
+        <label htmlFor="difficulty" className="field-label">Difficulty</label>
+        <select id="difficulty" className="input" value={form.difficulty} onChange={e => set('difficulty', e.target.value)}>
           <option>Easy</option>
           <option>Medium</option>
           <option>Hard</option>
@@ -106,18 +107,18 @@ export default function RecipeForm({ initialData, onSubmit, submitLabel = 'Save 
       {/* Times + Servings */}
       <div className="grid grid-cols-3 gap-4">
         <div>
-          <label className="field-label">Prep Time (min)</label>
-          <input className="input" type="number" min="0" placeholder="15"
+          <label htmlFor="prepTime" className="field-label">Prep Time (min)</label>
+          <input id="prepTime" className="input" type="number" min="0" placeholder="15"
             value={form.prepTime} onChange={e => set('prepTime', e.target.value)} />
         </div>
         <div>
-          <label className="field-label">Cook Time (min)</label>
-          <input className="input" type="number" min="0" placeholder="30"
+          <label htmlFor="cookTime" className="field-label">Cook Time (min)</label>
+          <input id="cookTime" className="input" type="number" min="0" placeholder="30"
             value={form.cookTime} onChange={e => set('cookTime', e.target.value)} />
         </div>
         <div>
-          <label className="field-label">Servings</label>
-          <input className="input" type="number" min="1" placeholder="4"
+          <label htmlFor="servings" className="field-label">Servings</label>
+          <input id="servings" className="input" type="number" min="1" placeholder="4"
             value={form.servings} onChange={e => set('servings', e.target.value)} />
         </div>
       </div>
@@ -128,11 +129,11 @@ export default function RecipeForm({ initialData, onSubmit, submitLabel = 'Save 
         <div className="flex flex-col gap-2">
           {form.ingredients.map((ing, i) => (
             <div key={i} className="flex gap-2 items-center">
-              <input className="input flex-[2]" placeholder="Name" required
+              <input className="input flex-[2]" placeholder="Name"
                 value={ing.name} onChange={e => setIngredient(i, 'name', e.target.value)} />
-              <input className="input flex-1" type="number" min="0" step="any" placeholder="Amount" required
+              <input className="input flex-1" type="number" min="0" step="any" placeholder="Amount"
                 value={ing.amount} onChange={e => setIngredient(i, 'amount', e.target.value)} />
-              <input className="input flex-1" placeholder="Unit (g, cup…)" required
+              <input className="input flex-1" placeholder="Unit (g, cup…)"
                 value={ing.unit} onChange={e => setIngredient(i, 'unit', e.target.value)} />
               {form.ingredients.length > 1 && (
                 <button type="button" onClick={() => removeIngredient(i)}
@@ -175,17 +176,17 @@ export default function RecipeForm({ initialData, onSubmit, submitLabel = 'Save 
 
       {/* Tags */}
       <div>
-        <label className="field-label">
+        <label htmlFor="tags" className="field-label">
           Tags <span className="text-sage-400 font-normal">(comma-separated)</span>
         </label>
-        <input className="input" placeholder="italian, pasta, quick"
+        <input id="tags" className="input" placeholder="italian, pasta, quick"
           value={form.tags} onChange={e => set('tags', e.target.value)} />
       </div>
 
       {/* Notes */}
       <div>
-        <label className="field-label">Notes</label>
-        <textarea className="input resize-y min-h-[80px]" placeholder="Any extra tips or variations…"
+        <label htmlFor="notes" className="field-label">Notes</label>
+        <textarea id="notes" className="input resize-y min-h-[80px]" placeholder="Any extra tips or variations…"
           value={form.notes} onChange={e => set('notes', e.target.value)} />
       </div>
 

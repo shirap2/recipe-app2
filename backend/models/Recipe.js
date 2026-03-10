@@ -56,24 +56,9 @@ const RecipeSchema=new mongoose.Schema({
         enum: ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Dessert', 'Drink', 'Other'],
         default: 'Other'
       },
-      createdAt: {
-        type: Date,
-        default: Date.now,
-        immutable: true
-      },
-      updatedAt: {
-        type: Date,
-        default: Date.now
-      }
-});
+}, { timestamps: true });
 
 // Add text index for searching
 RecipeSchema.index({ title: 'text', tags: 'text' });
-
-// update the updatedAt field before saving
-RecipeSchema.pre('save',function(next){
-    this.updatedAt=new Date();
-    next();
-});
 
 module.exports=mongoose.model('Recipe', RecipeSchema);

@@ -61,83 +61,65 @@ Everything beyond this — sharing, friends, image uploads, categories, sorting 
 | Backend API | **Done** | Express + Mongoose, full recipe CRUD, search endpoint |
 | JWT auth | **Done** | Access token (5m) + refresh token (1d, httpOnly cookie) |
 | Token refresh / silent retry | **Done** | Axios response interceptor in `AuthContext` |
-| Session persistence | **Done** | Refresh-on-mount restores session from cookie |
+| Session persistence | **Done** | Refresh-on-mount restores session from cookie; `/auth/refresh` now returns `user` object directly |
 | React Router | **Done** | v6, all MVP routes wired |
 | Protected routes | **Done** | `ProtectedRoute` wraps all authenticated pages |
-| Recipe list page | **Done** | Grid layout, search bar, empty state |
-| Recipe detail page | **Done** | Two-column layout, meta pills, tags, delete |
-| Create recipe | **Done** | Full `RecipeForm` with dynamic ingredients + steps |
+| Recipe list page | **Done** | Grid layout, search, category filter, sort, empty state; URL params: `?q=`, `?sort=`, `?order=`, `?category=` |
+| Recipe detail page | **Done** | Two-column layout, meta pills, tags, delete with ConfirmDialog |
+| Create recipe | **Done** | Full `RecipeForm` with dynamic ingredients + steps + category |
 | Edit recipe | **Done** | `RecipeForm` pre-populated, PATCH to backend |
 | Tailwind v4 theme | **Done** | Earth tones: sage, cream, terracotta in `index.css` |
-| Design tokens | **Done** | `btn-primary/secondary/danger/ghost`, `.input`, `.card`, `.page`, `.field-label` |
+| Design tokens | **Done** | `btn-primary/secondary/danger/ghost`, `.input`, `.card`, `.page`, `.field-label`, `.filter-pill`, `.filter-pill-active` |
+| SearchBar component | **Done** | Extracted component, drives `?q=` URL param |
+| CategoryFilter component | **Done** | Pill group, drives `?category=` URL param; backend filters by category |
+| SortControls component | **Done** | Drives `?sort=` + `?order=` URL params; sorting performed client-side |
+| ConfirmDialog component | **Done** | Replaces `window.confirm()` in RecipeDetailPage (BUG-005 fix) |
+| Toast / ToastContext / useToast | **Done** | Non-blocking success/error notifications; `ToastProvider` in `App.jsx` |
+| GET /api/users/me | **Done** | Returns `{id, username, email}`; mounted with auth at `/api/users` |
+| Category field on Recipe | **Done** | Enum field in schema + filter in getAllRecipes + RecipeForm select |
+| Test infrastructure | **Done** | Vitest + React Testing Library (frontend); Jest (backend) |
 
 ### 2.2 What to fix
 
 These are bugs or UX gaps in the existing implementation that must be resolved before or alongside any new feature work.
 
-#### BUG-001 — Username not shown in NavBar after session restore
+#### ~~BUG-001~~ — Username not shown in NavBar after session restore — **FIXED**
 
-**Where:** `AuthContext.jsx:25`, `NavBar.jsx:36`
+**Fix applied:** `/api/auth/refresh` now returns `{ accessToken, user: {id, username, email} }` (same shape as login). `AuthContext` uses `data.user` directly from the refresh response — no second HTTP call needed. NavBar now shows `user.username` correctly after session restore.
 
-**Problem:** On mount, `AuthContext` calls `/auth/refresh` and decodes only `userId` from the JWT payload. The JWT does not contain `username`, so `user.username` is `undefined`. The NavBar displays "Account" instead of the real username.
+#### ~~BUG-002~~ — Login accepts username but register asks for email — **FIXED**
 
-**Fix:** Either (a) include `username` in the JWT payload when signing, or (b) after a successful refresh, make a `GET /api/users/me` call to fetch the full user profile and populate `AuthContext` state.
+**Fix applied:** `authController.js` `login` function now uses `User.findOne({ $or: [{ username }, { email: username }] })`. Users can log in with either their username or email.
 
-Recommended: option (b) — keeps JWTs minimal and allows the profile to include future fields.
+#### ~~BUG-003~~ — No frontend password validation rules — **FIXED**
 
-#### BUG-002 — Login accepts username but register asks for email
+**Fix applied:** `RegisterPage.jsx` password input now has a hint below it: "At least 6 characters." styled with `text-sage-400 text-xs mt-1`.
 
-**Where:** `LoginPage.jsx`, `RegisterPage.jsx`, `authController.js:68`
+#### ~~BUG-004~~ — Search is not cleared when navigating away and back — **FIXED**
 
-**Problem:** Register collects `username + email + password`. Login only uses `username + password`. Users who forget their username and try logging in with email will get "Invalid credentials" with no explanation.
+**Fix applied:** `RecipesPage` now uses `useSearchParams`. Search query (`?q=`), sort (`?sort=`, `?order=`), and category (`?category=`) are all URL params. Back button works correctly.
 
-**Fix:** Support email login on the backend (`User.findOne({ $or: [{ username }, { email: username }] })`), or add clear copy on the login page: "Sign in with your username, not your email."
+#### ~~BUG-005~~ — Delete uses `window.confirm()` — **FIXED**
 
-#### BUG-003 — No frontend password validation rules
+**Fix applied:** `ConfirmDialog` component replaces `window.confirm()` in `RecipeDetailPage`. Shows inline "Delete" trigger button → confirmation message + Confirm/Cancel buttons.
 
-**Where:** `RegisterPage.jsx`
+#### ~~BUG-006~~ — `updatedAt` not refreshed on PATCH — **FIXED**
 
-**Problem:** The form enforces `minLength={6}` but shows no rules to the user. The error message on failure is generic.
-
-**Fix:** Add a password hint below the input field: "At least 6 characters."
-
-#### BUG-004 — Search is not cleared when navigating away and back
-
-**Where:** `RecipesPage.jsx`
-
-**Problem:** If a user searches, then navigates to a detail page, then comes back, the search state resets (local component state) but the URL does not reflect the search query. This is inconsistent.
-
-**Fix:** Persist search query in the URL as `?q=` so the browser back button works correctly and the list reflects the active filter.
-
-#### BUG-005 — Delete uses `window.confirm()`
-
-**Where:** `RecipeDetailPage.jsx:26`
-
-**Problem:** `window.confirm()` is a blocking native dialog, visually inconsistent with the app's design system.
-
-**Fix:** Replace with a styled inline confirmation (e.g. the button changes to "Are you sure? [Confirm] [Cancel]") or a modal.
-
-#### BUG-006 — `updatedAt` not refreshed on PATCH
-
-**Where:** `recipeController.js:50`
-
-**Problem:** `findOneAndUpdate` with `req.body` bypasses Mongoose middleware, so the `pre('save')` hook that updates `updatedAt` does not run.
-
-**Fix:** Either use `{ timestamps: true }` on the schema (and remove the manual hook), or call `.save()` on the fetched document instead of `findOneAndUpdate`.
+**Fix applied:** `Recipe.js` schema now uses `{ timestamps: true }` schema option. Manual `createdAt`/`updatedAt` field definitions and the `pre('save')` hook removed. Mongoose handles `updatedAt` automatically — including for `findOneAndUpdate`.
 
 ### 2.3 Missing Features
 
-| Feature | Priority | Section |
-|---------|----------|---------|
-| `GET /api/users/me` endpoint | High | [10.1](#101-user-profile-endpoint) |
-| Image upload per recipe | Medium | [10.2](#102-image-uploads) |
-| Category field + filter | Medium | [10.3](#103-category-and-sorting) |
-| Sort controls on recipe list | Medium | [10.3](#103-category-and-sorting) |
-| Friends / social system | Low | [10.4](#104-friends--social) |
-| Recipe sharing | Low | [10.5](#105-recipe-sharing) |
-| Rate limiting on auth routes | High (security) | [11](#11-security-checklist) |
-| Input validation middleware | High (security) | [11](#11-security-checklist) |
-| Security headers (helmet) | Medium (security) | [11](#11-security-checklist) |
+| Feature | Priority | Status | Section |
+|---------|----------|--------|---------|
+| `GET /api/users/me` endpoint | High | **Done** | [10.1](#101-user-profile-endpoint) |
+| Category field + filter | Medium | **Done** | [10.3](#103-category-and-sorting) |
+| Sort controls on recipe list | Medium | **Done (frontend only)** | [10.3](#103-category-and-sorting) |
+| Image upload per recipe | Medium | Not started | [10.2](#102-image-uploads) |
+| Friends / social system | Low | Not started | [10.4](#104-friends--social) |
+| Recipe sharing | Low | Not started | [10.5](#105-recipe-sharing) |
+| Rate limiting on auth routes | High (security) | Not started | [11](#11-security-checklist) |
+| Input validation middleware | High (security) | Not started | [11](#11-security-checklist) |
+| Security headers (helmet) | Medium (security) | Not started | [11](#11-security-checklist) |
 
 ---
 
@@ -234,6 +216,7 @@ Recipe {
   servings:     Number
   tags:         [String]   text-indexed
   difficulty:   Enum       'Easy' | 'Medium' | 'Hard'  default: 'Medium'
+  category:     Enum       'Breakfast'|'Lunch'|'Dinner'|'Snack'|'Dessert'|'Drink'|'Other'  default: 'Other'
   notes:        String
   source:       String     default: 'Custom'
   sourceUrl:    String
@@ -247,7 +230,6 @@ Indexes: { title: 'text', tags: 'text' }
 
 **Planned additions (post-MVP):**
 ```
-  category:    Enum       'Breakfast'|'Lunch'|'Dinner'|'Snack'|'Dessert'|'Drink'|'Other'
   imageUrl:    String     uploaded image (Cloudinary or local)
   isPublic:    Boolean    default: false
   sharedWith:  [ObjectId] ref: User
@@ -263,12 +245,8 @@ Indexes: { title: 'text', tags: 'text' }
 ```
 POST   /api/auth/register     → { accessToken, user: {id, username, email} } + cookie
 POST   /api/auth/login        → { accessToken, user: {id, username, email} } + cookie
-GET    /api/auth/refresh      → { accessToken }                                (cookie required)
+GET    /api/auth/refresh      → { accessToken, user: {id, username, email} }   (cookie required)
 POST   /api/auth/logout       → { message }                                    (Bearer required)
-```
-
-**Planned (BUG-001 fix):**
-```
 GET    /api/users/me          → { id, username, email }                        (Bearer required)
 ```
 
@@ -278,6 +256,7 @@ All require `Authorization: Bearer <accessToken>`. All queries are scoped to `re
 
 ```
 GET    /api/recipes                    → Recipe[]     all recipes for this user
+GET    /api/recipes?category=          → Recipe[]     filtered by category (backend)
 GET    /api/recipes/search?query=      → Recipe[]     regex match on title + tags
 GET    /api/recipes/:id                → Recipe
 POST   /api/recipes                    → Recipe       body: RecipePayload
@@ -285,19 +264,25 @@ PATCH  /api/recipes/:id                → Recipe       body: Partial<RecipePayl
 DELETE /api/recipes/:id                → { message }
 ```
 
+Note: `?sort=&order=` are handled **client-side** in `RecipesPage` — the backend does not sort.
+
 **Planned (post-MVP):**
 ```
-GET    /api/recipes?category=&sort=&order=   → Recipe[]   filtered + sorted
+GET    /api/recipes?sort=&order=             → Recipe[]   server-side sort
 GET    /api/recipes?ingredients=a,b          → Recipe[]   ingredient filter
 POST   /api/recipes/:id/share                → { message } body: { userId }
 GET    /api/recipes/shared                   → Recipe[]   shared with current user
 DELETE /api/recipes/:id/share/:userId        → { message }
 ```
 
-### 5.3 Users endpoints (planned)
+### 5.3 Users endpoints
 
 ```
-GET    /api/users/me                         → User profile
+GET    /api/users/me                         → { id, username, email }   (Bearer required) — Done
+```
+
+**Planned (post-MVP):**
+```
 GET    /api/users/search?username=           → User[]
 POST   /api/users/friends/request            → { message } body: { username }
 PATCH  /api/users/friends/request/:userId    → { message } body: { action: 'accept'|'decline' }
@@ -325,35 +310,40 @@ frontend/src/
 ├── api/
 │   ├── axios.js          Two Axios instances: publicAxios + axiosInstance
 │   ├── authApi.js        login, register, refresh, logout
-│   ├── recipesApi.js     getAllRecipes, getRecipeById, createRecipe, updateRecipe,
-│   │                     deleteRecipe, searchRecipes
-│   └── usersApi.js       (planned) getMe, searchUsers, friends CRUD
+│   ├── recipesApi.js     getAllRecipes(category?), getRecipeById, createRecipe,
+│   │                     updateRecipe, deleteRecipe, searchRecipes
+│   └── usersApi.js       getMe
 ├── context/
-│   └── AuthContext.jsx   Session state, token ref, request/response interceptors
+│   ├── AuthContext.jsx   Session state, token ref, request/response interceptors
+│   └── ToastContext.jsx  ToastProvider + showToast context
 ├── hooks/
-│   └── useAuth.js        useContext(AuthContext) wrapper
+│   ├── useAuth.js        useContext(AuthContext) wrapper
+│   └── useToast.js       useContext(ToastContext) wrapper
 ├── pages/
 │   ├── LoginPage.jsx
 │   ├── RegisterPage.jsx
-│   ├── RecipesPage.jsx
+│   ├── RecipesPage.jsx        URL params: ?q= ?sort= ?order= ?category=
 │   ├── RecipeDetailPage.jsx
 │   ├── CreateRecipePage.jsx
 │   ├── EditRecipePage.jsx
-│   ├── FriendsPage.jsx       (planned)
-│   └── SharedWithMePage.jsx  (planned)
+│   ├── FriendsPage.jsx        (planned)
+│   └── SharedWithMePage.jsx   (planned)
 ├── components/
 │   ├── ProtectedRoute.jsx
 │   ├── NavBar.jsx
 │   ├── RecipeCard.jsx
 │   ├── RecipeForm.jsx
-│   ├── SearchBar.jsx         (planned — extract from RecipesPage)
-│   ├── CategoryFilter.jsx    (planned)
-│   ├── SortControls.jsx      (planned)
-│   ├── ConfirmDialog.jsx     (planned — replace window.confirm)
-│   ├── ShareModal.jsx        (planned)
-│   └── ImageUpload.jsx       (planned)
+│   ├── SearchBar.jsx
+│   ├── CategoryFilter.jsx
+│   ├── SortControls.jsx
+│   ├── ConfirmDialog.jsx
+│   ├── Toast.jsx
+│   ├── ShareModal.jsx         (planned)
+│   └── ImageUpload.jsx        (planned)
+├── test/
+│   └── setup.js          @testing-library/jest-dom import
 ├── index.css             Tailwind v4 @theme + component classes
-├── App.jsx               Router + AuthProvider
+├── App.jsx               BrowserRouter > AuthProvider > ToastProvider > Routes
 └── main.jsx              React DOM root
 ```
 
@@ -363,7 +353,7 @@ frontend/src/
 |------|-----------|------|-------|
 | `/login` | `LoginPage` | Public | Redirects to `/recipes` if already authed |
 | `/register` | `RegisterPage` | Public | |
-| `/recipes` | `RecipesPage` | Protected | Search via `?q=` query param |
+| `/recipes` | `RecipesPage` | Protected | URL params: `?q=`, `?sort=`, `?order=`, `?category=` |
 | `/recipes/new` | `CreateRecipePage` | Protected | |
 | `/recipes/:id` | `RecipeDetailPage` | Protected | |
 | `/recipes/:id/edit` | `EditRecipePage` | Protected | |
@@ -378,7 +368,7 @@ No global state library (Redux, Zustand, etc.) is used or planned. State is mana
 - **Auth state** (`user`, `loading`) — `AuthContext`, consumed via `useAuth()`
 - **Access token** — `useRef` inside `AuthContext` (not React state, avoids re-renders)
 - **Page-local data** (recipe list, single recipe, form state) — `useState` + `useEffect` per page
-- **URL state** — search query in `?q=` param (to be implemented per BUG-004)
+- **URL state** — `?q=`, `?sort=`, `?order=`, `?category=` in `RecipesPage` via `useSearchParams`
 
 ---
 
@@ -394,19 +384,19 @@ Every component listed here **must have a corresponding design file** at `design
 | `ProtectedRoute` | `components/ProtectedRoute.jsx` | `design/components/ProtectedRoute.md` |
 | `RecipeCard` | `components/RecipeCard.jsx` | `design/components/RecipeCard.md` |
 | `RecipeForm` | `components/RecipeForm.jsx` | `design/components/RecipeForm.md` |
+| `SearchBar` | `components/SearchBar.jsx` | `design/components/SearchBar.md` |
+| `CategoryFilter` | `components/CategoryFilter.jsx` | `design/components/CategoryFilter.md` |
+| `SortControls` | `components/SortControls.jsx` | `design/components/SortControls.md` |
+| `ConfirmDialog` | `components/ConfirmDialog.jsx` | `design/components/ConfirmDialog.md` |
+| `Toast` | `components/Toast.jsx` | `design/components/Toast.md` |
 
-### Planned components
+### Planned components (not yet implemented)
 
 | Component | File | Design file | Purpose |
 |-----------|------|-------------|---------|
-| `SearchBar` | `components/SearchBar.jsx` | `design/components/SearchBar.md` | Extract search input + submit from `RecipesPage`. Drives `?q=` URL param. |
-| `CategoryFilter` | `components/CategoryFilter.jsx` | `design/components/CategoryFilter.md` | Tab or pill group for recipe category filtering |
-| `SortControls` | `components/SortControls.jsx` | `design/components/SortControls.md` | Dropdown to sort recipe list by `title`, `prepTime`, `cookTime`, `createdAt` |
-| `ConfirmDialog` | `components/ConfirmDialog.jsx` | `design/components/ConfirmDialog.md` | Inline styled replacement for `window.confirm()`. Used for delete, unfriend, etc. |
 | `ShareModal` | `components/ShareModal.jsx` | `design/components/ShareModal.md` | Modal to search friends and share a recipe with them |
 | `ImageUpload` | `components/ImageUpload.jsx` | `design/components/ImageUpload.md` | File picker + preview for recipe cover image |
 | `FriendCard` | `components/FriendCard.jsx` | `design/components/FriendCard.md` | Shows a friend's username + pending/accepted status |
-| `Toast` | `components/Toast.jsx` | `design/components/Toast.md` | Non-blocking feedback notification (success/error) to replace inline error `<p>` elements |
 
 ### Component design file format
 
@@ -506,11 +496,11 @@ Existing code without tests must have tests added before any modification to tha
 
 ### 9.2 Testing tools
 
-| Layer | Tool | Config file |
-|-------|------|-------------|
-| Frontend unit + component | Vitest + React Testing Library | `frontend/vitest.config.js` |
-| Backend unit | Jest | `backend/jest.config.js` |
-| E2E | Playwright | `e2e/playwright.config.js` |
+| Layer | Tool | Config |
+|-------|------|--------|
+| Frontend unit + component | Vitest + React Testing Library | `test` block in `frontend/vite.config.js`; setup file at `frontend/src/test/setup.js` |
+| Backend unit | Jest | `jest` key in `backend/package.json` |
+| E2E | Playwright | `e2e/playwright.config.js` (not yet set up) |
 
 **Install (frontend):**
 ```bash
@@ -635,14 +625,9 @@ Backend:
 
 ## 10. Feature Roadmap
 
-### 10.1 User profile endpoint
+### 10.1 User profile endpoint — **Done**
 
-**Priority: High (fixes BUG-001)**
-
-Add `GET /api/users/me` to the backend. After a successful session restore (refresh), `AuthContext` calls this endpoint to populate `user.username` in state.
-
-Backend: new `usersController.js` + `routes/users.js`
-Frontend: add `getMe()` to `api/usersApi.js`, call it in `AuthContext` after refresh
+`GET /api/users/me` is implemented (`backend/controllers/usersController.js` + `backend/routes/users.js`, mounted at `/api/users` with auth middleware). `getMe()` is in `frontend/src/api/usersApi.js`. BUG-001 was resolved by returning `user` directly from the `/auth/refresh` response instead of making a second call.
 
 ### 10.2 Image uploads
 
@@ -659,15 +644,16 @@ Recipe cover images. Each recipe can have one image.
 
 ### 10.3 Category and sorting
 
-**Backend:**
-- Add `category: Enum` to Recipe schema: `Breakfast | Lunch | Dinner | Snack | Dessert | Drink | Other`
-- Extend `GET /api/recipes` to accept `?category=&sort=&order=`
-- Extend `searchRecipes` to accept `?ingredients=` (comma-separated ingredient names)
+**Done:**
+- `category` enum field added to Recipe schema (Breakfast|Lunch|Dinner|Snack|Dessert|Drink|Other, default: 'Other')
+- `GET /api/recipes?category=` filters by category (backend)
+- `CategoryFilter` component: pill group above recipe grid, drives `?category=` URL param
+- `SortControls` component: drives `?sort=` + `?order=` URL params; sorting is client-side in RecipesPage
+- `RecipeForm` includes category `<select>` for create/edit
 
-**Frontend:**
-- `CategoryFilter` component: pill/tab group above the recipe grid
-- `SortControls` component: dropdown for sort field + order
-- Persist active filters in URL params
+**Still needed:**
+- Backend sort: extend `GET /api/recipes` to accept `?sort=&order=` (currently sort is frontend-only)
+- Ingredient filter: `GET /api/recipes/search?ingredients=a,b`
 
 ### 10.4 Friends / social
 
@@ -705,10 +691,10 @@ Depends on friends feature being complete.
 | Regex input escaped in search (ReDoS prevention) | Done | — |
 | CORS restricted to `localhost:3000` | Done (dev) | Lock to prod domain on deploy |
 | `secure: true` on cookie in production | Done (conditional) | Verify `NODE_ENV=production` is set on deploy |
-| Rate limiting on auth routes | **Missing** | Add `express-rate-limit` to `/api/auth/login` and `/api/auth/register` |
-| Input validation middleware | **Missing** | Add `express-validator` or `zod` to all POST/PATCH routes |
-| Security headers | **Missing** | Add `helmet` in `server.js` |
-| MongoDB injection protection | **Missing** | Add `express-mongo-sanitize` |
+| Rate limiting on auth routes | Done | `express-rate-limit` on `/api/auth/login` + `/api/auth/register` — 10 req / 15 min |
+| Input validation middleware | Done | `zod` schemas in `backend/middleware/validate.js`; applied to POST/PATCH auth + recipe routes |
+| Security headers | Done | `helmet()` in `server.js` |
+| MongoDB injection protection | Done | `express-mongo-sanitize()` in `server.js` |
 | No stack traces in error responses | Done | Global error handler returns generic message |
 | Tokens never in localStorage | Done | Access token in `useRef` only |
 

@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 // Generate tokens
 const generateAccessToken = (userId) => {
   return jwt.sign({ userId }, process.env.ACCESS_TOKEN_SECRET, {
-    expiresIn: '5m',
+    expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN || '5m',
   });
 };
 
@@ -65,7 +65,7 @@ const login = async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ $or: [{ username }, { email: username }] });
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }

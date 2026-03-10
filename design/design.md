@@ -14,18 +14,19 @@ A full-stack recipe management application. Users register, log in, and manage a
 recipe-app/
 ├── backend/          Node/Express API server
 │   ├── config/       DB connection (db.js)
-│   ├── controllers/  Business logic (authController.js, recipeController.js)
+│   ├── controllers/  authController.js, recipeController.js, usersController.js
 │   ├── middleware/   JWT auth guard (auth.js)
 │   ├── models/       Mongoose schemas (User.js, Recipe.js)
-│   ├── routes/       Express routers (auth.js, recipes.js)
+│   ├── routes/       Express routers (auth.js, recipes.js, users.js)
 │   └── server.js     Entry point — CORS, middleware, route mounting
 └── frontend/         React SPA (Vite 6)
     └── src/
-        ├── api/      HTTP layer (axios.js, authApi.js, recipesApi.js)
-        ├── context/  AuthContext.jsx — session state + token management
-        ├── hooks/    useAuth.js
+        ├── api/      axios.js, authApi.js, recipesApi.js, usersApi.js
+        ├── context/  AuthContext.jsx, ToastContext.jsx
+        ├── hooks/    useAuth.js, useToast.js
         ├── pages/    Full-page route components
-        └── components/ Shared UI components
+        ├── components/ Shared UI components
+        └── test/     setup.js (jest-dom import)
 ```
 
 ---
@@ -48,13 +49,23 @@ recipe-app/
 | GET | `/api/auth/refresh` | `refresh` | No (cookie) |
 | POST | `/api/auth/logout` | `logout` | Bearer token |
 
+`/auth/refresh` returns `{ accessToken, user: {id, username, email} }` — same shape as login.
+
+### Users Routes — `/api/users/*`
+
+All require Bearer token (enforced at the router level in `server.js`).
+
+| Method | Path | Handler |
+|--------|------|---------|
+| GET | `/api/users/me` | `getMe` — returns `{id, username, email}` |
+
 ### Recipe Routes — `/api/recipes/*`
 
 All routes require a valid Bearer access token (enforced at the router level).
 
 | Method | Path | Handler |
 |--------|------|---------|
-| GET | `/api/recipes` | `getAllRecipes` |
+| GET | `/api/recipes` | `getAllRecipes` — accepts `?category=` |
 | GET | `/api/recipes/search?query=` | `searchRecipes` |
 | GET | `/api/recipes/:id` | `getRecipeById` |
 | POST | `/api/recipes` | `createRecipe` |
@@ -90,6 +101,7 @@ All recipe queries are scoped to `req.user.userId` — users can only access the
 | `servings` | Number | |
 | `tags` | `[String]` | Text-indexed for search |
 | `difficulty` | Enum: Easy/Medium/Hard | Default: Medium |
+| `category` | Enum: Breakfast/Lunch/Dinner/Snack/Dessert/Drink/Other | Default: Other |
 | `notes` | String | Optional free text |
 | `source`, `sourceUrl`, `sourceImage` | String | Provenance metadata |
 | `createdAt` | Date | Immutable |
@@ -120,6 +132,7 @@ Browser                          Backend
 - **Access tokens:** JWT, 5-minute expiry, signed with `ACCESS_TOKEN_SECRET`, carried in-memory only (React ref, not localStorage)
 - **Refresh tokens:** JWT, 1-day expiry, signed with `REFRESH_TOKEN_SECRET`, stored as `httpOnly; SameSite=Strict` cookie and persisted in `User.refreshToken`
 - **Token rotation:** Each `/auth/refresh` call issues a new access token (refresh token itself is not rotated)
+- **Refresh response shape:** `{ accessToken, user: {id, username, email} }` — same as login, so `AuthContext` can restore full user state without a second API call
 - **Auth middleware (`middleware/auth.js`):** Extracts `Authorization: Bearer <token>`, verifies signature, sets `req.user = { userId }`
 
 ---
@@ -128,10 +141,12 @@ Browser                          Backend
 
 ### Routing (`App.jsx`)
 
+Provider nesting: `BrowserRouter > AuthProvider > ToastProvider > Routes`
+
 ```
 /login                → LoginPage       (public)
 /register             → RegisterPage    (public)
-/recipes              → RecipesPage     (protected)
+/recipes              → RecipesPage     (protected) — ?q= ?sort= ?order= ?category=
 /recipes/new          → CreateRecipePage (protected)
 /recipes/:id          → RecipeDetailPage (protected)
 /recipes/:id/edit     → EditRecipePage  (protected)
@@ -151,21 +166,29 @@ Browser                          Backend
 
 Two axios instances:
 - **`publicAxios`** — used by `authApi.js` for login/register/refresh; no interceptors
-- **`axiosInstance`** (default export) — used by `recipesApi.js` for all protected calls; interceptors attached by `AuthContext`
+- **`axiosInstance`** (default export) — used by all protected calls; interceptors attached by `AuthContext`
 
-`recipesApi.js` exposes: `getAllRecipes`, `getRecipeById`, `createRecipe`, `updateRecipe`, `deleteRecipe`, `searchRecipes`.
+`recipesApi.js` exposes: `getAllRecipes(category?)`, `getRecipeById`, `createRecipe`, `updateRecipe`, `deleteRecipe`, `searchRecipes`.
+
+`usersApi.js` exposes: `getMe`.
 
 ### Key Components
 
-**`RecipeForm`** — shared create/edit form:
-- Manages dynamic ingredient rows (`[{name, amount, unit}]`) and instruction steps
-- `toFormState(data)` converts API data to form state (tags array → comma string)
-- `toPayload(form)` converts form state back to API payload (comma string → tags array, strings → numbers)
-- Used by both `CreateRecipePage` and `EditRecipePage`
+**`RecipeForm`** — shared create/edit form: dynamic ingredients + instructions, category select, `toFormState`/`toPayload` converters. Used by `CreateRecipePage` and `EditRecipePage`.
 
-**`NavBar`** — top navigation with links and logout button
+**`NavBar`** — sticky top nav. Displays `user.username` (populated from refresh response). Links: My Recipes, + New Recipe. Logout button.
 
-**`RecipeCard`** — summary card used in the recipe list
+**`RecipeCard`** — summary card in recipe list. Shows title, difficulty badge, total time, up to 4 tags.
+
+**`SearchBar`** — controlled search input; calls `onSearch(query)` / `onClear()`. Read-once `initialValue` from URL.
+
+**`CategoryFilter`** — pill group (All + 7 categories); calls `onChange(category | null)`. Active pill via `.filter-pill-active`.
+
+**`SortControls`** — sort field + order selects; calls `onChange(sort, order)`.
+
+**`ConfirmDialog`** — inline confirm: trigger button → message + Confirm/Cancel. Used in `RecipeDetailPage` for delete.
+
+**`Toast` / `ToastContext` / `useToast`** — non-blocking notifications. `showToast(message, 'success'|'error')`. Auto-dismisses after 4s.
 
 ---
 
@@ -187,23 +210,25 @@ Two axios instances:
 
 ## Planned Features
 
-### 1. Search & Filter
-- Ingredient-based search: `GET /api/recipes/search?ingredients=tomato,garlic`
-- Category filter: `GET /api/recipes?category=Dinner`
-- Sort: `?sort=prepTime&order=asc`
-- Add `category` enum field to Recipe schema
+### 1. Search & Filter (partially done)
+- **Done:** Category filter (`GET /api/recipes?category=`, `CategoryFilter` component)
+- **Done:** Sort controls (client-side, `SortControls` component + URL params)
+- **Still needed:** Ingredient-based search: `GET /api/recipes/search?ingredients=tomato,garlic`
+- **Still needed:** Server-side sort: `GET /api/recipes?sort=&order=`
 
 ### 2. Recipe Sharing
 - Add `isPublic` + `sharedWith: [ObjectId]` to Recipe schema
 - `POST /api/recipes/:id/share` — share with a friend
 - `GET /api/recipes/shared` — view recipes shared with me
-- Recipe queries must include owned OR shared-with-me
+- `ShareModal` component (design file exists at `design/components/ShareModal.md`)
+- `SharedWithMePage`
 
 ### 3. Friends / Social
 - Add `friends: [ObjectId]` + `friendRequests: [{from, status}]` to User schema
-- New `usersController` + `/api/users` routes for friend requests, friend list, user search
+- Extend `/api/users` routes: friend requests, friend list, user search
+- `FriendsPage`, `FriendCard` component (design file exists at `design/components/FriendCard.md`)
 
-### 4. Frontend additions
-- `FriendsPage`, `SharedWithMePage`
-- `SearchBar`, `CategoryFilter`, `SortControls`, `ShareModal` components
-- `usersApi.js` for friends/social API calls
+### 4. Image Uploads
+- Add `imageUrl: String` to Recipe schema
+- `POST /api/recipes/:id/image` — upload cover image
+- `ImageUpload` component

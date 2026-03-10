@@ -8,7 +8,14 @@ exports.getAllRecipes = async (req, res) => {
     if (req.query.category) {
       query.category = req.query.category;
     }
-    const recipes = await Recipe.find(query);
+
+    const ALLOWED_SORT_FIELDS = ['title', 'createdAt', 'prepTime', 'cookTime'];
+    const sortFieldValid = ALLOWED_SORT_FIELDS.includes(req.query.sort);
+    const sortField = sortFieldValid ? req.query.sort : 'createdAt';
+    // If an invalid sort field was provided, also ignore the order and default to desc
+    const sortOrder = (!sortFieldValid && req.query.sort) ? -1 : (req.query.order === 'asc' ? 1 : -1);
+
+    const recipes = await Recipe.find(query).sort({ [sortField]: sortOrder });
     res.json(recipes);
   } catch (error) {
     res.status(500).json({ message: 'Internal Server Error' });

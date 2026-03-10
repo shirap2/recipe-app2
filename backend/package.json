@@ -13,7 +13,8 @@
   "description": "",
   "jest": {
     "testEnvironment": "node",
-    "transform": {}
+    "transform": {},
+    "testMatch": ["**/__tests__/**/*.test.js", "**/*.test.js", "**/*.spec.js"]
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
@@ -27,8 +28,12 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.2",
+    "express-mongo-sanitize": "^2.2.0",
+    "express-rate-limit": "^8.3.1",
+    "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.9.5",
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "zod": "^4.3.6"
   }
 }

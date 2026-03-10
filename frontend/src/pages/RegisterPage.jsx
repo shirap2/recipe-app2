@@ -40,8 +40,9 @@ export default function RegisterPage() {
         <div className="card p-8">
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div>
-              <label className="field-label">Username</label>
+              <label htmlFor="username" className="field-label">Username</label>
               <input
+                id="username"
                 className="input"
                 name="username"
                 placeholder="your_username"
@@ -52,8 +53,9 @@ export default function RegisterPage() {
               />
             </div>
             <div>
-              <label className="field-label">Email</label>
+              <label htmlFor="email" className="field-label">Email</label>
               <input
+                id="email"
                 className="input"
                 name="email"
                 type="email"
@@ -64,8 +66,9 @@ export default function RegisterPage() {
               />
             </div>
             <div>
-              <label className="field-label">Password</label>
+              <label htmlFor="password" className="field-label">Password</label>
               <input
+                id="password"
                 className="input"
                 name="password"
                 type="password"
@@ -75,6 +78,7 @@ export default function RegisterPage() {
                 required
                 minLength={6}
               />
+              <p className="text-sage-400 text-xs mt-1">At least 6 characters.</p>
             </div>
 
             {error && (

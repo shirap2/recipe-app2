@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const recipeController = require('../controllers/recipeController');
+const { validate, recipeCreateSchema, recipeUpdateSchema } = require('../middleware/validate');
 
 // Search recipes
 router.get('/search', recipeController.searchRecipes);
@@ -13,10 +14,10 @@ router.get('/', recipeController.getAllRecipes);
 router.get('/:id', recipeController.getRecipeById);
 
 // Create new recipe
-router.post('/', recipeController.createRecipe);
+router.post('/',     validate(recipeCreateSchema), recipeController.createRecipe);
 
 // Update recipe
-router.patch('/:id', recipeController.updateRecipe);
+router.patch('/:id', validate(recipeUpdateSchema), recipeController.updateRecipe);
 
 // Delete recipe
 router.delete('/:id', recipeController.deleteRecipe);

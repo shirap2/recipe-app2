@@ -15,8 +15,11 @@ export default function ConfirmDialog({
   }
 
   async function handleConfirm() {
-    await onConfirm();
-    setPending(false);
+    try {
+      await onConfirm();
+    } finally {
+      setPending(false);
+    }
   }
 
   function handleCancel() {

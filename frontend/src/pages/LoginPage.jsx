@@ -40,8 +40,9 @@ export default function LoginPage() {
         <div className="card p-8">
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div>
-              <label className="field-label">Username</label>
+              <label htmlFor="username" className="field-label">Username</label>
               <input
+                id="username"
                 className="input"
                 name="username"
                 placeholder="your_username"
@@ -52,8 +53,9 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label className="field-label">Password</label>
+              <label htmlFor="password" className="field-label">Password</label>
               <input
+                id="password"
                 className="input"
                 name="password"
                 type="password"
